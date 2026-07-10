@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 900" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="640" height="900" fill="#ffffff"/>
+  <text x="320" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#222">Transformer Encoder for Time Series Forecasting</text>
+
+  <!-- Input sequence -->
+  <rect x="180" y="55" width="280" height="40" rx="6" fill="#dbe9ff" stroke="#3b6fb5"/>
+  <text x="320" y="80" text-anchor="middle" font-size="13" fill="#1a3a63">Input window: 30 past days, 1 value each</text>
+  <line x1="320" y1="95" x2="320" y2="120" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Dense projection -->
+  <rect x="180" y="120" width="280" height="40" rx="6" fill="#ffe6cc" stroke="#c97b1f"/>
+  <text x="320" y="145" text-anchor="middle" font-size="13" fill="#7a4a10">Dense projection: 1 value -&gt; 32-dim vector per day</text>
+  <line x1="320" y1="160" x2="320" y2="185" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Positional encoding add -->
+  <rect x="140" y="185" width="360" height="40" rx="6" fill="#f3d9f7" stroke="#9a3fa8"/>
+  <text x="320" y="210" text-anchor="middle" font-size="13" fill="#5c2264">+ Positional Encoding (sin/cos, injects day order)</text>
+  <line x1="320" y1="225" x2="320" y2="250" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Encoder block box -->
+  <rect x="90" y="250" width="460" height="380" rx="10" fill="#f7f7f7" stroke="#888" stroke-dasharray="5,4"/>
+  <text x="320" y="272" text-anchor="middle" font-size="13" font-weight="bold" fill="#444">Transformer Encoder Block  (x2 stacked)</text>
+
+  <!-- Multi-head attention -->
+  <rect x="150" y="290" width="340" height="50" rx="6" fill="#d9ecff" stroke="#3b6fb5"/>
+  <text x="320" y="311" text-anchor="middle" font-size="13" fill="#1a3a63">Multi-Head Self-Attention</text>
+  <text x="320" y="328" text-anchor="middle" font-size="10.5" fill="#375f8f">every day attends to every other day in the window</text>
+  <line x1="320" y1="340" x2="320" y2="360" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- residual arrow around attention -->
+  <path d="M 130 315 C 60 315, 60 375, 130 375" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="30" y="350" font-size="10" fill="#777" transform="rotate(-90 30 350)">residual</text>
+
+  <!-- Add & Norm 1 -->
+  <rect x="180" y="360" width="280" height="35" rx="6" fill="#e6e6e6" stroke="#777"/>
+  <text x="320" y="382" text-anchor="middle" font-size="12" fill="#333">Add + LayerNorm</text>
+  <line x1="320" y1="395" x2="320" y2="415" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Feedforward -->
+  <rect x="150" y="415" width="340" height="50" rx="6" fill="#d9f2d9" stroke="#3f9142"/>
+  <text x="320" y="436" text-anchor="middle" font-size="13" fill="#215623">Feed Forward (Dense -&gt; ReLU -&gt; Dense)</text>
+  <text x="320" y="453" text-anchor="middle" font-size="10.5" fill="#2d7a30">applied independently to each day's vector</text>
+  <line x1="320" y1="465" x2="320" y2="485" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- residual arrow around FF -->
+  <path d="M 130 440 C 60 440, 60 500, 130 500" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="30" y="475" font-size="10" fill="#777" transform="rotate(-90 30 475)">residual</text>
+
+  <!-- Add & Norm 2 -->
+  <rect x="180" y="485" width="280" height="35" rx="6" fill="#e6e6e6" stroke="#777"/>
+  <text x="320" y="507" text-anchor="middle" font-size="12" fill="#333">Add + LayerNorm</text>
+
+  <!-- loop back arrow -->
+  <path d="M 460 502 C 545 502, 545 300, 460 300" fill="none" stroke="#c94040" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <text x="560" y="410" font-size="10.5" fill="#c94040" transform="rotate(90 560 410)">repeat block (x2)</text>
+
+  <line x1="320" y1="630" x2="320" y2="655" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Pooling -->
+  <rect x="150" y="655" width="340" height="40" rx="6" fill="#ffe6cc" stroke="#c97b1f"/>
+  <text x="320" y="680" text-anchor="middle" font-size="13" fill="#7a4a10">Global Average Pooling (30 days -&gt; 1 vector)</text>
+  <line x1="320" y1="695" x2="320" y2="720" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Dense head -->
+  <rect x="180" y="720" width="280" height="40" rx="6" fill="#dbe9ff" stroke="#3b6fb5"/>
+  <text x="320" y="745" text-anchor="middle" font-size="13" fill="#1a3a63">Dense(32, relu) -&gt; Dropout</text>
+  <line x1="320" y1="760" x2="320" y2="785" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Output -->
+  <rect x="200" y="785" width="240" height="40" rx="6" fill="#ffd9d9" stroke="#c94040"/>
+  <text x="320" y="810" text-anchor="middle" font-size="13" fill="#7a1f1f">Output: predicted next-day residual</text>
+
+  <text x="30" y="860" font-size="11" fill="#777">Self-attention has no built-in sense of order (unlike an RNN's recurrence),</text>
+  <text x="30" y="878" font-size="11" fill="#777">which is why positional encoding is added right after the input projection.</text>
+</svg>
