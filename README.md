@@ -1,8 +1,11 @@
 # Transformer for Time Series Forecasting
 
-A Transformer encoder built **from scratch** in TensorFlow/Keras (positional encoding + multi-head self-attention, no external Transformer library) to forecast a synthetic daily time series, then used to predict multiple years ahead.
+Two Transformer encoders built **from scratch** in TensorFlow/Keras (positional encoding + multi-head self-attention, no external Transformer library):
 
-This notebook is a from-first-principles walkthrough — every line is commented, including the NumPy mechanics (broadcasting, `np.newaxis`, etc.) behind positional encoding.
+- **[Transformer.ipynb](Transformer.ipynb)** — univariate: forecasts a single synthetic daily series.
+- **[Transformer_multivar.ipynb](Transformer_multivar.ipynb)** — multivariate: forecasts revenue (`value`) using 4 extra correlated features (`customers`, `invoice_count`, `units`, `discount`) as additional context.
+
+Both are from-first-principles walkthroughs — every line is commented, including the NumPy mechanics (broadcasting, `np.newaxis`, etc.) behind positional encoding.
 
 ---
 
@@ -37,8 +40,8 @@ Trade-off: attention has **no built-in sense of order** (unlike an RNN's recurre
 
 The model is an **encoder-only** Transformer (no decoder — this is a regression/forecasting task, not sequence generation):
 
-1. **Input window** — the last 30 days, 1 value each (the detrended, scaled residual — see below).
-2. **Dense projection** — each day's single number is projected up into a 32-dimensional vector, giving attention more room to encode patterns.
+1. **Input window** — the last 30 days (1 feature per day in the univariate notebook, 5 features per day in the multivariate one).
+2. **Dense projection** — each day's feature vector is projected up into a 32-dimensional vector, giving attention more room to encode patterns.
 3. **+ Positional encoding** — fixed sine/cosine signals added on top, so the model knows which day is which.
 4. **Transformer encoder block (stacked twice)**:
    - **Multi-head self-attention** — every day attends to every other day in the window.
@@ -46,7 +49,7 @@ The model is an **encoder-only** Transformer (no decoder — this is a regressio
    - **Feed-forward network** — a small Dense→ReLU→Dense applied independently to each day's vector.
    - **Add + LayerNorm** — another residual connection + normalization.
 5. **Global average pooling** — collapses the 30 per-day vectors into a single vector.
-6. **Dense head** — a small MLP that outputs one number: the predicted next-day residual.
+6. **Dense head** — a small MLP that outputs one number: the predicted next-day target residual.
 
 ---
 
@@ -56,7 +59,7 @@ The synthetic data has a **linear upward trend**. Neural networks (Transformers 
 
 **Fix used here:** fit a straight line to the trend using only the training portion (to avoid leakage), subtract it to get a stationary residual (seasonality + noise), train the Transformer on *that*, then add the (extrapolated) trend back after predicting.
 
-## Pipeline
+## Univariate pipeline — `Transformer.ipynb`
 
 1. Generate a synthetic daily series: trend + weekly seasonality + yearly seasonality + noise
 2. Detrend (fit line on train portion only, subtract to get residual)
@@ -66,6 +69,19 @@ The synthetic data has a **linear upward trend**. Neural networks (Transformers 
 6. Build and train the Transformer encoder
 7. Evaluate on the test set (reconstruct real values: residual + trend)
 8. Recursive multi-step forecast: predict one step, feed it back in, repeat — then add the extrapolated trend back
+
+## Multivariate pipeline — `Transformer_multivar.ipynb`
+
+Same idea, extended to a small synthetic **retail dataset** where the columns are causally linked (not just correlated by coincidence): `customers` → `invoice_count` → `units` → `value` (revenue), plus an independent `discount` signal.
+
+1. Generate the 5 correlated columns: `value`, `customers`, `invoice_count`, `units`, `discount`
+2. Detrend every *trending* column (`value`, `customers`, `invoice_count`, `units`) using its own trend line fit on train data only — `discount` has no trend by construction
+3. Scale all 5 residual/discount columns together with one `MinMaxScaler` (train-fit only)
+4. Build sliding windows: 30 past days × 5 features → next day's `value` only (**multivariate input, univariate output**)
+5. Chronological train/test split
+6. Build and train the Transformer (input layer now takes `num_features` instead of 1)
+7. Evaluate on the test set
+8. Recursive multi-step forecast: the model predicts only `value`, while the other 4 "future" columns are supplied as known covariates (regenerated from the same synthetic formulas — a simplification that's valid because the data is synthetic; in production you'd use a real promo calendar / customer projections, or forecast them jointly)
 
 ## Requirements
 
@@ -77,4 +93,4 @@ The synthetic data has a **linear upward trend**. Neural networks (Transformers 
 
 ## Usage
 
-Open [Transformer.ipynb](Transformer.ipynb) in Jupyter or VS Code and run the cells in order. The data is synthetic and generated in the notebook itself — no external dataset needed.
+Open either notebook in Jupyter or VS Code and run the cells in order. The data is synthetic and generated in the notebook itself — no external dataset needed.
